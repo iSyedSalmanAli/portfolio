@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { siteConfig } from "@/data/portfolio";
+import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// ─── FONTS ──────────────────────────────────────────────────────
-const inter = Inter({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-sans",
   display: "swap",
 });
 
@@ -17,56 +14,24 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-// ─── METADATA (SEO) ─────────────────────────────────────────────
 export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.url),
-  title: {
-    default: `${siteConfig.name} — ${siteConfig.title}`,
-    template: `%s | ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-  keywords: [
-    "developer",
-    "portfolio",
-    "full-stack",
-    "react",
-    "next.js",
-    "typescript",
-    "web developer",
-  ],
-  authors: [{ name: siteConfig.name }],
-  creator: siteConfig.name,
+  title: "Syed Salman Ali | Cloud Team Lead",
+  description: "Cloud Team Lead at AKSIQ, architecting multi-region AWS infrastructure for a license-based enterprise platform serving 22+ clients.",
+  keywords: ["cloud engineer", "AWS", "DevOps", "backend", "infrastructure", "Syed Salman Ali"],
+  authors: [{ name: "Syed Salman Ali" }],
   openGraph: {
     type: "website",
-    locale: "en_US",
-    url: siteConfig.url,
-    title: `${siteConfig.name} — ${siteConfig.title}`,
-    description: siteConfig.description,
-    siteName: siteConfig.name,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${siteConfig.name} — ${siteConfig.title}`,
-    description: siteConfig.description,
-    creator: "@yourname",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true },
+    title: "Syed Salman Ali | Cloud Team Lead",
+    description: "Cloud Team Lead at AKSIQ, architecting multi-region AWS infrastructure serving 22+ clients.",
+    url: "https://syedsalmanali.com",
   },
 };
 
-// ─── LAYOUT ─────────────────────────────────────────────────────
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans`}>
-        <ThemeProvider>{children}</ThemeProvider>
+    <html lang="en">
+      <body className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
+        {children}
       </body>
     </html>
   );
