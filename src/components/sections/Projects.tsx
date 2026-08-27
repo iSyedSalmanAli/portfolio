@@ -56,7 +56,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         className="group relative cursor-pointer overflow-hidden rounded-[20px] border border-border bg-card p-8 transition-shadow duration-400 hover:shadow-[0_20px_50px_var(--glow)]"
-        style={{ transformStyle: "preserve3d", transition: "transform 0.4s ease, box-shadow 0.4s" }}
+        style={{ transformStyle: "preserve-3d", transition: "transform 0.4s ease, box-shadow 0.4s" }}
       >
         {/* Shine overlay */}
         <div
