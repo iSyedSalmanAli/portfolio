@@ -44,6 +44,7 @@ const EDUCATION = [
 const NAV_IDS = ["hero", "about", "work", "skills", "contact"];
 const NAV_LABELS = ["Home", "About", "Work", "Skills", "Contact"];
 
+// Keep the component identity stable during typing and form updates.
 function Row({ callout, children, id }: { callout: string; children: ReactNode; id?: string }) {
   return (
     <section id={id} className="content-row">
@@ -66,9 +67,56 @@ export default function Home() {
   const typed = useTypingEffect(TYPED);
 
   useEffect(() => { setMounted(true); const ck = () => { setIsMobile(window.innerWidth < 640); setIsTablet(window.innerWidth >= 640 && window.innerWidth < 1024); }; ck(); window.addEventListener("resize", ck); return () => window.removeEventListener("resize", ck); }, []);
-  useEffect(() => { const root = rootRef.current; if (!root) return; const onScroll = () => { for (const id of NAV_IDS) { const el = document.getElementById(id); if (el) { const r = el.getBoundingClientRect(); if (r.top <= 100 && r.bottom > 100) { setActiveNav(id); break; } } } }; root.addEventListener("scroll", onScroll, { passive: true }); return () => root.removeEventListener("scroll", onScroll); }, [mounted]);
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const updateActiveNav = () => {
+      const maxScroll = Math.max(0, root.scrollHeight - root.clientHeight);
+
+      if (root.scrollTop <= 2) {
+        setActiveNav(NAV_IDS[0]);
+        return;
+      }
+
+      // A short final section cannot always scroll up to the fixed header.
+      if (maxScroll > 0 && root.scrollTop >= maxScroll - 2) {
+        setActiveNav(NAV_IDS[NAV_IDS.length - 1]);
+        return;
+      }
+
+      // Track the section at the viewport midpoint, including gaps such as
+      // Education between Skills and Contact. Always recompute when scrolling up.
+      const activationLine = root.getBoundingClientRect().top + root.clientHeight / 2;
+      let current = NAV_IDS[0];
+      for (const id of NAV_IDS) {
+        const section = root.querySelector<HTMLElement>(`#${id}`);
+        if (section && section.getBoundingClientRect().top <= activationLine) {
+          current = id;
+        }
+      }
+      setActiveNav(current);
+    };
+
+    updateActiveNav();
+    root.addEventListener("scroll", updateActiveNav, { passive: true });
+    window.addEventListener("resize", updateActiveNav);
+    return () => {
+      root.removeEventListener("scroll", updateActiveNav);
+      window.removeEventListener("resize", updateActiveNav);
+    };
+  }, [mounted, isMobile, isTablet]);
   useEffect(() => { if (!menuOpen) return; const c = () => setMenuOpen(false); document.addEventListener("click", c); return () => document.removeEventListener("click", c); }, [menuOpen]);
-  const scrollTo = useCallback((id: string) => { document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); setMenuOpen(false); }, []);
+  const scrollTo = useCallback((id: string) => {
+    const section = rootRef.current?.querySelector<HTMLElement>(`#${id}`);
+    if (!section) return;
+    setActiveNav(id);
+    section.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start",
+    });
+    setMenuOpen(false);
+  }, []);
 
   const c = dark ? {
     bg: "#060a11", card: "#0e1528", border: "#162040",
@@ -119,12 +167,14 @@ export default function Home() {
     .mm button{display:block;width:100%;text-align:left;padding:14px 24px;background:transparent;border:none;color:${c.muted};font-size:15px;font-weight:450;font-family:${sans};cursor:pointer;min-height:44px;transition:background-color 0.18s ease,color 0.18s ease}
     .mm button.ac{color:${c.accent}}
 
+    /* Hover colors live in CSS so inline styles cannot override them. */
     .proj{position:relative;padding:${isMobile ? "20px 20px 20px 22px" : "22px 26px 22px 28px"};border:1px solid ${c.border};border-radius:14px;background:transparent;transition:border-color 0.18s ease,background-color 0.18s ease,box-shadow 0.18s ease}
     .proj::before{content:'';position:absolute;top:14px;bottom:14px;left:0;width:3px;background:${c.accent};border-radius:0 2px 2px 0;opacity:0;transform:scaleY(0);transform-origin:center;pointer-events:none;transition:opacity 0.18s ease,transform 0.2s ease}
     .proj h3,.exp-row h3{color:${c.heading};transition:color 0.18s ease}
 
     .tag{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-family:${mono};color:${c.tagText};background:${c.tag};border:1px solid ${c.tagBorder};font-weight:500;letter-spacing:0.01em;transition:border-color 0.18s ease,color 0.18s ease,background-color 0.18s ease}
 
+    /* Keep row geometry fixed so hovering cannot rewrap or jump the text. */
     .exp-row{position:relative;padding:${isMobile ? "16px 0" : "18px 0"};border-bottom:1px solid ${c.border};transition:background-color 0.18s ease}
     .exp-row::before{content:'';position:absolute;left:-10px;top:${isMobile ? "16px" : "18px"};bottom:${isMobile ? "16px" : "18px"};width:2px;background:${c.accent};opacity:0;transform:scaleY(0.4);transform-origin:center;border-radius:1px;pointer-events:none;transition:opacity 0.18s ease,transform 0.2s ease}
     .exp-row:last-child{border-bottom:none}
@@ -141,6 +191,7 @@ export default function Home() {
 
     a:not(.ci):not(.nav-pill):not(.btn-primary):not(.btn-secondary)::after{content:'';position:absolute;left:0;bottom:-1px;width:100%;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left;pointer-events:none;transition:transform 0.18s ease}
 
+    /* Apply hover only to devices with a hover-capable pointer. */
     @media (hover:hover) and (pointer:fine){
       a:hover{color:${c.heading}}
       .proj:hover{border-color:${dark ? "rgba(91,158,245,0.42)" : "rgba(48,104,208,0.34)"};background:${c.card};box-shadow:0 6px 20px ${dark ? "rgba(0,0,0,0.16)" : "rgba(19,26,40,0.05)"}}
@@ -159,6 +210,7 @@ export default function Home() {
       a:not(.ci):not(.nav-pill):not(.btn-primary):not(.btn-secondary):hover::after{transform:scaleX(1)}
     }
 
+    /* Match keyboard feedback without leaving hover states stuck on touch. */
     .ci:focus-visible{background:${c.tag};color:${c.heading}}
     .theme-btn:focus-visible,.hb:focus-visible,.mm button:focus-visible,.mm button:active{background:${c.tag}}
     .nav-pill:not(.active):focus-visible{background:${c.tag};color:${c.heading}}
@@ -178,6 +230,7 @@ export default function Home() {
     <div ref={rootRef} style={{ height: "100vh", overflowY: "auto", overflowX: "hidden", background: c.bg, color: c.text, fontFamily: sans, fontSize: 15, lineHeight: 1.7, transition: "background 0.3s, color 0.3s", WebkitFontSmoothing: "antialiased" }}>
       <style>{css}</style>
 
+      {/* NAV */}
       {isMobile ? (
         <><nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 150, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", background: c.nav, borderBottom: `1px solid ${c.border}`, padding: "0 20px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontFamily: mono, fontSize: 13, fontWeight: 600, color: c.accent, letterSpacing: "0.04em" }}>SSA</span>
@@ -198,7 +251,8 @@ export default function Home() {
 
       <div style={{ maxWidth: maxW, margin: "0 auto", padding: pad }}>
 
-        <section id="hero" style={{ paddingTop: isMobile ? 100 : 140, paddingBottom: sGap, display: twoCol ? "grid" : "block", gridTemplateColumns: twoCol ? "140px minmax(0,1fr)" : undefined, gap: twoCol ? 40 : undefined, alignItems: "start" }}>
+        {/* HERO */}
+        <section id="hero" style={{ paddingTop: isMobile ? 100 : 140, paddingBottom: sGap, display: twoCol ? "grid" : "block", gridTemplateColumns: twoCol ? "140px 1fr" : undefined, gap: twoCol ? 40 : undefined, alignItems: "start" }}>
           <p style={{ fontFamily: mono, fontSize: 13, color: c.muted, marginBottom: twoCol ? 0 : 20 }}>/intro</p>
           <div>
             <h1 style={{ fontSize: isMobile ? 27 : isTablet ? 32 : 36, fontWeight: 600, lineHeight: 1.2, letterSpacing: "-0.025em", color: c.heading, marginBottom: 12 }}>
@@ -219,12 +273,14 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ABOUT */}
         <Row callout="/about" id="about">
           <h2 style={{ fontSize: isMobile ? 19 : 21, fontWeight: 600, color: c.heading, lineHeight: 1.3, letterSpacing: "-0.02em", marginBottom: 18 }}>What I care about</h2>
           <p style={{ marginBottom: 16 }}>Infrastructure should be <strong style={{ color: c.heading, fontWeight: 550 }}>invisible</strong>. When it works well, nobody notices. When it fails, everyone does. I focus on building systems that are reliable, secure, and cost efficient so teams can ship without thinking about the cloud underneath.</p>
           <p>I believe in <strong style={{ color: c.heading, fontWeight: 550 }}>automation over manual work</strong>, <strong style={{ color: c.heading, fontWeight: 550 }}>monitoring over guessing</strong>, and <strong style={{ color: c.heading, fontWeight: 550 }}>documentation over tribal knowledge</strong>. Every pipeline I build, every instance I provision, and every database I manage is designed to run without me having to touch it again.</p>
         </Row>
 
+        {/* EXPERIENCE */}
         <Row callout="/experience">
           <h2 style={{ fontSize: isMobile ? 19 : 21, fontWeight: 600, color: c.heading, lineHeight: 1.3, letterSpacing: "-0.02em", marginBottom: 6 }}>Career at AKSIQ</h2>
           <p style={{ fontSize: 13, color: c.muted, marginBottom: 20 }}>4 roles across 3+ years, from junior engineer to leading the cloud team</p>
@@ -239,6 +295,7 @@ export default function Home() {
           ))}
         </Row>
 
+        {/* WORK */}
         <Row callout="/work" id="work">
           <h2 style={{ fontSize: isMobile ? 19 : 21, fontWeight: 600, color: c.heading, lineHeight: 1.3, letterSpacing: "-0.02em", marginBottom: 6 }}>What I build and manage</h2>
           <p style={{ fontSize: 13, color: c.muted, marginBottom: 20 }}>Infrastructure projects at enterprise scale</p>
@@ -256,6 +313,7 @@ export default function Home() {
           </div>
         </Row>
 
+        {/* SKILLS */}
         <Row callout="/skills" id="skills">
           <h2 style={{ fontSize: isMobile ? 19 : 21, fontWeight: 600, color: c.heading, lineHeight: 1.3, letterSpacing: "-0.02em", marginBottom: 22 }}>Technical expertise</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 24 : 28 }}>
@@ -268,6 +326,7 @@ export default function Home() {
           </div>
         </Row>
 
+        {/* EDUCATION */}
         <Row callout="/education">
           <h2 style={{ fontSize: isMobile ? 19 : 21, fontWeight: 600, color: c.heading, lineHeight: 1.3, letterSpacing: "-0.02em", marginBottom: 18 }}>Degrees and certifications</h2>
           {EDUCATION.map((cert, i) => (
@@ -289,14 +348,15 @@ export default function Home() {
             { title: "CI/CD pipeline design for ECS deployments", tag: "DevOps" },
             { title: "Cloud cost optimization strategies", tag: "Cloud" },
           ].map((note, i) => (
-            <div key={i} className="edu-row" style={{ borderBottom: `1px solid ${c.border}` }}>
-              <span style={{ fontSize: 14, fontWeight: 450 }}>{note.title}</span>
+            <div key={i} style={{ padding: "14px 0", borderBottom: `1px solid ${c.border}`, display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, cursor: "pointer", transition: "padding-left 0.2s" }} onMouseEnter={e => (e.currentTarget.style.paddingLeft = "8px")} onMouseLeave={e => (e.currentTarget.style.paddingLeft = "0")}>
+              <span style={{ fontSize: 14, color: c.heading, fontWeight: 450 }}>{note.title}</span>
               <span style={{ fontFamily: mono, fontSize: 11, color: c.muted }}>{note.tag}</span>
             </div>
           ))}
         </Row>
         */}
 
+        {/* CONTACT */}
         <Row callout="/contact" id="contact">
           <h2 style={{ fontSize: isMobile ? 19 : 21, fontWeight: 600, color: c.heading, lineHeight: 1.3, letterSpacing: "-0.02em", marginBottom: 14 }}>Start a conversation</h2>
           <p style={{ marginBottom: 26 }}>I like working with teams who care about reliability and craft. If you have a role that might be a fit, a project to collaborate on, or just want to connect, I&apos;d love to hear from you.</p>
