@@ -153,16 +153,18 @@ const SECTIONS: Section[] = [
   { id: "projects", label: "Projects", inNav: true },
   { id: "skills", label: "Skills", inNav: true },
   { id: "certifications", label: "Certifications", inNav: true },
-  // Education has no pill of its own; it sits under Certifications, so the
-  // highlight stays there rather than jumping back up to Skills.
-  { id: "education", label: "Education", inNav: false, navFor: "certifications" },
+  { id: "education", label: "Education", inNav: true },
   { id: "contact", label: "Contact", inNav: true },
 ];
 const NAV = SECTIONS.filter(s => s.inNav);
 const SECTION_IDS = SECTIONS.map(s => s.id);
 const NAV_FOR: Record<string, string> = Object.fromEntries(SECTIONS.map(s => [s.id, s.navFor ?? s.id]));
 
-const FORMSPREE_ID = process.env.NEXT_PUBLIC_FORMSPREE_ID;
+// Next replaces the literal process.env.NEXT_PUBLIC_FORMSPREE_ID at build
+// time. The typeof guard keeps the file from throwing if it is ever loaded
+// outside a bundler (a preview sandbox has no `process`).
+const FORMSPREE_ID =
+  typeof process !== "undefined" ? process.env.NEXT_PUBLIC_FORMSPREE_ID : undefined;
 
 function Row({ callout, children, id }: { callout: string; children: ReactNode; id?: string }) {
   return (
