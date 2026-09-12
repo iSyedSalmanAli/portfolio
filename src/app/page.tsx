@@ -185,6 +185,7 @@ export default function Home() {
   const [width, setWidth] = useState(1280);
   const [form, setForm] = useState({ name: "", email: "", msg: "" });
   const [bot, setBot] = useState("");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState<SendStatus>("idle");
   const [errMsg, setErrMsg] = useState("");
   const typed = useTypingEffect(TYPED);
@@ -369,7 +370,7 @@ export default function Home() {
     .mm button{display:block;width:100%;text-align:left;padding:14px 24px;background:transparent;border:none;color:${c.muted};font-size:15px;font-weight:450;font-family:${sans};cursor:pointer;min-height:44px;transition:background-color 0.18s ease,color 0.18s ease}
     .mm button.ac{color:${c.accent}}
 
-    .proj{position:relative;padding:${isMobile ? "20px 20px 20px 22px" : "22px 26px 22px 28px"};border:1px solid ${c.border};border-radius:14px;background:transparent;transition:border-color 0.18s ease,background-color 0.18s ease,box-shadow 0.18s ease}
+    .proj{position:relative;display:flex;flex-direction:column;padding:${isMobile ? "18px 18px 18px 20px" : "22px 26px 22px 28px"};border:1px solid ${c.border};border-radius:14px;background:transparent;transition:border-color 0.18s ease,background-color 0.18s ease,box-shadow 0.18s ease}
     .proj::before{content:'';position:absolute;top:14px;bottom:14px;left:0;width:3px;background:${c.accent};border-radius:0 2px 2px 0;opacity:0;transform:scaleY(0);transform-origin:center;pointer-events:none;transition:opacity 0.18s ease,transform 0.2s ease}
     .proj h3,.exp-row h3{color:${c.heading};transition:color 0.18s ease}
 
@@ -378,6 +379,22 @@ export default function Home() {
     .exp-row{position:relative;padding:${isMobile ? "16px 0" : "18px 0"};border-bottom:1px solid ${c.border};transition:background-color 0.18s ease}
     .exp-row::before{content:'';position:absolute;left:-10px;top:${isMobile ? "16px" : "18px"};bottom:${isMobile ? "16px" : "18px"};width:2px;background:${c.accent};opacity:0;transform:scaleY(0.4);transform-origin:center;border-radius:1px;pointer-events:none;transition:opacity 0.18s ease,transform 0.2s ease}
     .exp-row:last-child{border-bottom:none}
+    /* Mobile only: two rows that scroll sideways, so a long list costs two
+       card-heights of page instead of ten. Bleeds to the screen edges and
+       keeps a sliver of the next card visible so the swipe is discoverable. */
+    .hscroll{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,1fr);grid-auto-columns:82vw;gap:10px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;margin:0 -20px;padding:2px 20px 12px;scrollbar-width:none}
+    .hscroll::-webkit-scrollbar{display:none}
+    .hscroll > *{scroll-snap-align:start;min-width:0}
+    .hscroll.one-row{grid-template-rows:1fr}
+    .swipe-hint{display:flex;align-items:center;gap:6px;font-family:${mono};font-size:11px;color:${c.muted};margin-bottom:10px}
+    .swipe-hint::after{content:'';flex:1;height:1px;background:linear-gradient(to right,${c.border},transparent)}
+
+    .cert-card{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:12px 14px;border:1px solid ${c.border};border-radius:12px;background:transparent;transition:border-color 0.18s ease}
+    .clamp{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+    .clamp-2{-webkit-line-clamp:2}
+    .clamp-3{-webkit-line-clamp:3}
+    .more-btn{background:transparent;border:none;padding:0;margin-top:2px;font:inherit;font-size:13px;font-weight:500;color:${c.accent};cursor:pointer;font-family:${sans}}
+
     .edu-row{position:relative;padding:13px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;transition:background-color 0.18s ease}
     .row-title{color:${c.heading};font-size:14px;font-weight:450;display:block;transition:color 0.18s ease}
     .row-sub{font-family:${mono};font-size:11px;color:${c.muted};display:block;margin-top:2px}
@@ -527,17 +544,45 @@ export default function Home() {
         <Row callout="/work" id="work">
           <h2 id="work-h" style={{ ...h2, marginBottom: 6 }}>What I build and manage at AKSIQ</h2>
           <p style={{ fontSize: 13, color: c.muted, marginBottom: 20 }}>Infrastructure projects at enterprise scale</p>
+          {/* This is the work that matters most to a reader, so it stays a
+              plain vertical list. On mobile the description is clamped to
+              three lines with a toggle rather than hidden in a carousel. */}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {PROJECTS.map(p => (
-              <div key={p.num} className="proj">
-                <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
-                  <span style={{ fontFamily: mono, fontSize: 11, color: c.muted, fontWeight: 500 }}>{p.num}</span>
-                  <h3 style={{ fontSize: isMobile ? 15 : 15.5, fontWeight: 550 }}>{p.title}</h3>
+            {PROJECTS.map(p => {
+              const open = expanded.has(p.num);
+              return (
+                <div key={p.num} className="proj">
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+                    <span style={{ fontFamily: mono, fontSize: 11, color: c.muted, fontWeight: 500 }}>{p.num}</span>
+                    <h3 style={{ fontSize: isMobile ? 15 : 15.5, fontWeight: 550 }}>{p.title}</h3>
+                  </div>
+                  <p
+                    id={`work-desc-${p.num}`}
+                    className={isMobile && !open ? "clamp clamp-3" : undefined}
+                    style={{ fontSize: 14, lineHeight: 1.7, marginBottom: isMobile ? 6 : 14 }}
+                  >
+                    {p.desc}
+                  </p>
+                  {isMobile && (
+                    <button
+                      type="button"
+                      className="more-btn"
+                      aria-expanded={open}
+                      aria-controls={`work-desc-${p.num}`}
+                      onClick={() => setExpanded(prev => {
+                        const next = new Set(prev);
+                        if (next.has(p.num)) next.delete(p.num); else next.add(p.num);
+                        return next;
+                      })}
+                      style={{ marginBottom: 12 }}
+                    >
+                      {open ? "Show less" : "Read more"}
+                    </button>
+                  )}
+                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>{p.tags.map(t => <span key={t} className="tag">{t}</span>)}</div>
                 </div>
-                <p style={{ fontSize: 14, lineHeight: 1.7, marginBottom: 14 }}>{p.desc}</p>
-                <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>{p.tags.map(t => <span key={t} className="tag">{t}</span>)}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Row>
 
@@ -572,7 +617,12 @@ export default function Home() {
         <Row callout="/projects" id="projects">
           <h2 id="projects-h" style={{ ...h2, marginBottom: 6 }}>Earlier projects</h2>
           <p style={{ fontSize: 13, color: c.muted, marginBottom: 20 }}>Academic and personal work from before AKSIQ</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {isMobile && <p className="swipe-hint">swipe →</p>}
+          <div
+            className={isMobile ? "hscroll" : undefined}
+            style={isMobile ? undefined : { display: "flex", flexDirection: "column", gap: 12 }}
+            {...(isMobile ? { role: "region", "aria-label": "Earlier projects, scroll sideways", tabIndex: 0 } : {})}
+          >
             {PERSONAL_PROJECTS.map(p => (
               <div key={p.name} className="proj">
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
@@ -581,8 +631,8 @@ export default function Home() {
                   </h3>
                   {p.meta && <span style={{ fontFamily: mono, fontSize: 11, color: c.muted }}>{p.meta}</span>}
                 </div>
-                <p style={{ fontSize: 14, lineHeight: 1.7, marginBottom: 10 }}>{p.desc}</p>
-                <span style={{ fontFamily: mono, fontSize: 11, color: c.muted }}>{p.stack}</span>
+                <p className={isMobile ? "clamp clamp-3" : undefined} style={{ fontSize: 14, lineHeight: 1.7, marginBottom: 10 }}>{p.desc}</p>
+                <span className={isMobile ? "clamp clamp-2" : undefined} style={{ fontFamily: mono, fontSize: 11, color: c.muted, marginTop: "auto" }}>{p.stack}</span>
               </div>
             ))}
           </div>
@@ -602,24 +652,47 @@ export default function Home() {
 
         <Row callout="/certifications" id="certifications">
           <h2 id="certifications-h" style={{ ...h2, marginBottom: 6 }}>Certifications</h2>
-          <p style={{ fontSize: 13, color: c.muted, marginBottom: 24 }}>Continued learning across cloud, AI, and software architecture</p>
+          <p style={{ fontSize: 13, color: c.muted, marginBottom: isMobile ? 14 : 24 }}>Continued learning across cloud, AI, and software architecture</p>
+          {isMobile && <p className="swipe-hint">swipe →</p>}
           <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 26 : 32 }}>
             {CERT_GROUPS.map(g => (
               <div key={g.group}>
-                <h3 style={{ fontSize: 14, fontWeight: 600, color: c.heading, marginBottom: 6, letterSpacing: "-0.01em" }}>{g.group}</h3>
-                {g.items.map((cert, i) => (
-                  <div key={cert.name} className="edu-row" style={{ borderBottom: i < g.items.length - 1 ? `1px solid ${c.border}` : "none" }}>
-                    <div style={{ minWidth: 0 }}>
-                      <span className="row-title">
-                        {cert.href
-                          ? <a href={cert.href} target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>{cert.name}</a>
-                          : cert.name}
-                      </span>
-                      <span className="row-sub">{cert.issuer}</span>
-                    </div>
-                    <span className="row-meta" style={{ color: cert.state === "active" ? c.accent2 : cert.state === "planned" ? c.accent : c.muted }}>{cert.meta}</span>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: c.heading, marginBottom: isMobile ? 10 : 6, letterSpacing: "-0.01em" }}>{g.group}</h3>
+
+                {isMobile ? (
+                  <div
+                    className={`hscroll${g.items.length < 3 ? " one-row" : ""}`}
+                    role="region"
+                    aria-label={`${g.group} certifications, scroll sideways`}
+                    tabIndex={0}
+                  >
+                    {g.items.map(cert => (
+                      <div key={cert.name} className="cert-card">
+                        <span className="row-title clamp clamp-2" style={{ lineHeight: 1.35 }}>
+                          {cert.href
+                            ? <a href={cert.href} target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>{cert.name}</a>
+                            : cert.name}
+                        </span>
+                        <span className="row-sub clamp clamp-2" style={{ marginTop: 0 }}>{cert.issuer}</span>
+                        <span className="row-meta" style={{ marginTop: 4, color: cert.state === "active" ? c.accent2 : cert.state === "planned" ? c.accent : c.muted }}>{cert.meta}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  g.items.map((cert, i) => (
+                    <div key={cert.name} className="edu-row" style={{ borderBottom: i < g.items.length - 1 ? `1px solid ${c.border}` : "none" }}>
+                      <div style={{ minWidth: 0 }}>
+                        <span className="row-title">
+                          {cert.href
+                            ? <a href={cert.href} target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>{cert.name}</a>
+                            : cert.name}
+                        </span>
+                        <span className="row-sub">{cert.issuer}</span>
+                      </div>
+                      <span className="row-meta" style={{ color: cert.state === "active" ? c.accent2 : cert.state === "planned" ? c.accent : c.muted }}>{cert.meta}</span>
+                    </div>
+                  ))
+                )}
               </div>
             ))}
           </div>
