@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     template: "%s | Syed Salman Ali",
   },
   description:
-    "Cloud Team Lead at AKSIQ, architecting multi-region AWS infrastructure for a license-based enterprise platform serving 22+ clients.",
+    "Cloud Team Lead at AKSiQ, architecting multi-region AWS infrastructure for a license-based enterprise platform serving 22+ clients.",
   keywords: ["cloud engineer", "AWS", "DevOps", "backend", "infrastructure", "Syed Salman Ali"],
   authors: [{ name: "Syed Salman Ali", url: SITE }],
   creator: "Syed Salman Ali",
@@ -28,17 +28,16 @@ export const metadata: Metadata = {
     siteName: "Syed Salman Ali",
     title: "Syed Salman Ali | Cloud Team Lead",
     description:
-      "Cloud Team Lead at AKSIQ, architecting multi-region AWS infrastructure serving 22+ clients.",
+      "Cloud Team Lead at AKSiQ, architecting multi-region AWS infrastructure serving 22+ clients.",
     url: SITE,
-    // Add a 1200x630 image at public/og.png, then uncomment:
-    // images: [{ url: "/og.png", width: 1200, height: 630, alt: "Syed Salman Ali — Cloud Team Lead" }],
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Syed Salman Ali — Cloud Team Lead" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Syed Salman Ali | Cloud Team Lead",
     description:
-      "Cloud Team Lead at AKSIQ, architecting multi-region AWS infrastructure serving 22+ clients.",
-    // images: ["/og.png"],
+      "Cloud Team Lead at AKSiQ, architecting multi-region AWS infrastructure serving 22+ clients.",
+    images: ["/og.png"],
   },
 };
 
@@ -58,7 +57,7 @@ const PERSON_JSONLD = {
   "@type": "Person",
   name: "Syed Salman Ali",
   jobTitle: "Cloud Team Lead",
-  worksFor: { "@type": "Organization", name: "AKSIQ" },
+  worksFor: { "@type": "Organization", name: "AKS iQ" },
   url: SITE,
   email: "mailto:i.syedsalmanali@gmail.com",
   address: { "@type": "PostalAddress", addressLocality: "Karachi", addressCountry: "PK" },
