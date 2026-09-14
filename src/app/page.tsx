@@ -315,7 +315,7 @@ export default function Home() {
     nav: "rgba(6,10,17,0.88)", menuBg: "rgba(6,10,17,0.96)",
     input: "#0f1a2e", inputBorder: "#1c3358",
     tag: "rgba(91,158,245,0.06)", tagBorder: "rgba(91,158,245,0.10)", tagText: "#6a9ee0",
-    focus: "rgba(91,158,245,0.2)",
+    focus: "rgba(91,158,245,0.2)", bgRgb: "6,10,17",
   } : {
     bg: "#f8f9fb", card: "#ffffff", border: "#e2e7ef",
     text: "#5c6a7e", heading: "#131a28", muted: "#666f83",
@@ -323,7 +323,7 @@ export default function Home() {
     nav: "rgba(248,249,251,0.9)", menuBg: "rgba(248,249,251,0.96)",
     input: "#eff2f7", inputBorder: "#cdd4e0",
     tag: "rgba(48,104,208,0.04)", tagBorder: "rgba(48,104,208,0.08)", tagText: "#4072b8",
-    focus: "rgba(48,104,208,0.15)",
+    focus: "rgba(48,104,208,0.15)", bgRgb: "248,249,251",
   };
 
   // Transparent so the boot background painted in layout.tsx shows through:
@@ -354,6 +354,16 @@ export default function Home() {
        window past the end of the body and showed a blank screen) and fights
        the mobile URL bar. */
     .shell{min-height:100vh;min-height:100dvh;overflow-x:hidden}
+
+    /* The floating nav only blurs what sits inside its own pill, so text
+       scrolling past it above and to either side stayed sharp. This strip
+       spans the full width behind the pill and fades out downwards, so
+       content dissolves as it reaches the top instead of being cut off. */
+    .top-fade{position:fixed;top:0;left:0;right:0;height:104px;z-index:149;pointer-events:none;
+      backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+      background:linear-gradient(to bottom,rgba(${c.bgRgb},0.86) 34%,rgba(${c.bgRgb},0) 100%);
+      -webkit-mask-image:linear-gradient(to bottom,#000 58%,transparent 100%);
+      mask-image:linear-gradient(to bottom,#000 58%,transparent 100%)}
     .vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
     .skip{position:fixed;top:-120px;left:16px;z-index:200;padding:10px 16px;border-radius:10px;background:${c.accent};color:#fff;font-size:13px;font-weight:600;transition:top 0.18s ease}
     .skip:focus{top:12px}
@@ -463,6 +473,8 @@ export default function Home() {
       <style>{css}</style>
 
       <a href="#main" className="skip" onClick={e => { e.preventDefault(); scrollTo("hero"); }}>Skip to content</a>
+
+      {!compactNav && <div className="top-fade" aria-hidden="true" />}
 
       {compactNav ? (
         <>
